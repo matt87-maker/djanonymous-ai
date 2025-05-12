@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ask the AI</title>
+</head>
+<body>
+  <h2>Ask the AI anything:</h2>
+  <form id="aiForm">
+    <input type="text" id="prompt" name="prompt" placeholder="Type your prompt..." required>
+    <button type="submit">Send</button>
+  </form>
+  <pre id="result"></pre>
+
+  <script>
+    document.getElementById("aiForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById("prompt").value;
+      const res = await fetch("/ai/generate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      document.getElementById("result").innerText = data.output || data.error;
+    });
+  </script>
+</body>
+</html>
