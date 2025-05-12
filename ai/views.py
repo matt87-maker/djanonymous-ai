@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 @csrf_exempt
 def generate_text(request):
@@ -20,38 +20,39 @@ def generate_text(request):
             return JsonResponse({"error": "Missing prompt text."}, status=400)
 
         headers = {
-            "Authorization": f"Bearer {HF_API_TOKEN}",
+            "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
 
+        payload = {
+            "model": "llama3-8b-8192",  # or "mixtral-8x7b-32768"
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 256
+        }
+
         response = requests.post(
-            "https://api-inference.huggingface.co/models/distilgpt2",
+            "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
-            json={"inputs": prompt},
+            json=payload,
             timeout=10
         )
 
-        try:
-            output = response.json()
-        except ValueError:
-            return JsonResponse({"error": "Invalid response from Hugging Face (not JSON)."}, status=502)
-
         if response.status_code != 200:
             return JsonResponse({
-                "error": output.get("error", f"Hugging Face API error: {response.status_code}")
+                "error": f"Groq API error: {response.status_code}",
+                "details": response.text
             }, status=502)
 
-        if isinstance(output, list) and "generated_text" in output[0]:
-            return JsonResponse({"output": output[0]["generated_text"]})
-        else:
-            return JsonResponse({"error": "Unexpected response from Hugging Face API."}, status=500)
+        data = response.json()
+        return JsonResponse({"output": data['choices'][0]['message']['content'].strip()})
 
     except requests.exceptions.Timeout:
-        return JsonResponse({"error": "Hugging Face API request timed out."}, status=504)
+        return JsonResponse({"error": "Groq API request timed out."}, status=504)
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-# ✅ You MUST include this:
+
 def home(request):
     return render(request, "index.html")
