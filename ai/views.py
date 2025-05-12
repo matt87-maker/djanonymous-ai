@@ -1,8 +1,10 @@
 import requests
 import json
+import os
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import os
+from django.shortcuts import render
 
 HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
@@ -34,7 +36,6 @@ def generate_text(request):
         except ValueError:
             return JsonResponse({"error": "Invalid response from Hugging Face (not JSON)."}, status=502)
 
-        # Hugging Face rate limit, model offline, etc.
         if response.status_code != 200:
             return JsonResponse({
                 "error": output.get("error", f"Hugging Face API error: {response.status_code}")
@@ -50,3 +51,7 @@ def generate_text(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+# ✅ You MUST include this:
+def home(request):
+    return render(request, "index.html")
