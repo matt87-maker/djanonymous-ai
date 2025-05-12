@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import generate_text
+from .views import generate_text, home
 
 urlpatterns = [
-    path("generate/", generate_text),
+    path("", home),                 # Homepage with prompt form
+    path("generate/", generate_text),  # API endpoint
 ]
